@@ -1,0 +1,9 @@
+fastapi
+motor
+pydantic
+bson
+uvicorn
+python-dotenv
+pymongo
+streamlit
+plotly

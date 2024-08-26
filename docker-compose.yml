@@ -1,0 +1,83 @@
+version: '3'
+services:
+  energyapi:
+    networks:
+      - web
+    labels:
+      - "traefik.http.routers.energyapi.rule=Host(`energy-api.docker.localhost`)"
+    build: backend
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/mydatabase  # Update the database name if needed
+    depends_on:
+      - mongodb
+
+  streamlit:
+    build: frontend
+    networks:
+      - web 
+    labels:
+      - "traefik.http.routers.mongodb.rule=Host(`dashboard.docker.localhost`)"
+  mongodb:
+    image: mongo:latest
+    networks:
+      - web
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro  # Mount the init script
+    environment:
+      MONGO_INITDB_DATABASE: mydatabase  # Set the initial database name
+  adminbackend:
+    build: adminpanel
+    networks:
+      - web
+    labels:
+      - "traefik.http.routers.java_api_backend.rule=Host(`adminpanel.docker.localhost`)"
+    links:
+      - db
+    environment:
+      - MSSQLPASSWORD=EnergyAppPassword1337!
+      - MSSQLDATABASE=Master
+      - MSSQLHOST=db:1433 
+    depends_on:
+      - "db"
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=EnergyAppPassword1337!  # Strong password required by MSSQL
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    networks:
+      - web  
+    labels:
+      - "traefik.enable=false"
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.11
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    networks:
+      - web
+    # Enables the web UI and tells Traefik to listen to docker
+    command: 
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+    labels:
+      - "traefik.http.routers.reverse-proxy.entrypoints=web"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  web:
+    external: true

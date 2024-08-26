@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meter Details</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mt-5">Energy Meter Details</h2>
+        <div id="meterDetails" class="mt-4">
+            <!-- Meter details will be displayed here -->
+        </div>
+        <div class="text-center mt-3">
+            <a href="/dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const meterId = urlParams.get('id');
+
+            if (!meterId) {
+                $('#meterDetails').html('<p class="text-danger">No meter ID provided in URL.</p>');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/energy-meter-details/search',
+                type: 'GET',
+                data: { query: meterId }, 
+                success: function(response) {
+                    // Controleer of er meters zijn gevonden
+                    if (response.length > 0) {
+                        // Toon de details van de eerste gevonden energiemeter in de pagina
+                        const meter = response[0];
+                        const detailsHtml = `
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Meter ID: ${meter.meterId}</h5>
+                                    <p class="card-text">Location: ${meter.location}</p>
+                                    <p class="card-text">Status: ${meter.status}</p>
+                                </div>
+                            </div>`;
+                        $('#meterDetails').html(detailsHtml);
+                    } else {
+                        $('#meterDetails').html('<p class="text-danger">No meter details found.</p>');
+                    }
+                },
+                error: function(error) {
+                    $('#meterDetails').html('<p class="text-danger">Failed to fetch meter details.</p>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
