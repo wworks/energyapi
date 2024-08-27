@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+      - features/**
+      - dependabot/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  docker:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Create network
+      run: docker network create web || true
+
+    - name: Start containers
+      run: docker compose -f "docker-compose.yml" up -d --build
+    
+    - name: Scan with sqlmap
+      run: docker run --network=web secsi/sqlmap:latest --url "http://adminpanel:8080" --batch --crawl=2 --random-agent --forms --level=5 --risk=3
+    
+    - name: Check network
+      if: always()
+      run: netstat -tulpn
+
+    - name: Check container
+      if: always()
+      run: docker container ps
+
+    - name: Check network
+      if: always()
+      run: docker network inspect web
+
+    - name: Stop containers
+      if: always()
+      run: docker compose -f "docker-compose.yml" down -v --rmi all
