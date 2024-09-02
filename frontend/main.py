@@ -63,10 +63,11 @@ if st.session_state.get("logged_in"):
         # Convert timestamp to datetime
         df['timestamp'] = pd.to_datetime(df['timestamp'])
 
+
         # Display Data
         st.header("Energie Meetdata")
         st.write(df)
-
+        st.markdown("**Energie data is niet real-time**", unsafe_allow_html=True)
         # Plot usage over time
         st.header("Energieverbruik in de tijd")
         fig_usage = px.line(df, x="timestamp", y="usage", title="Energieverbruik (kWh)", labels={"timestamp": "Tijd", "usage": "Verbruik (kWh)"})
